@@ -1,0 +1,7 @@
+.vs
+*.db
+*.VC.opendb
+*.aps
+*.user
+Debug
+Release
