@@ -149,14 +149,14 @@ int __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 				}
 				
 				// add comment section
-				// NOTE: let's not remove the arbitrary 0x8000 limit, so that we don't crash original implementation.
-				// FIXME: ...except that this limit must be exposed onto SJIS string, not WCHAR one.
-				// Also, the limit could be expanded up to 0xFFFF, GetDlgItemText is the only place where 0x8000 is used.
-				wchar_t* wcomment = new wchar_t[0xFFFF];
-				memset(wcomment, 0, 0xFFFF);
-				int wlen = GetDlgItemText(hWnd, IDC_COMMENT, wcomment, 0x8000);
+				// NOTE: let's not remove the arbitrary 0xFFFF limit, so that we don't crash original implementation.
+				wchar_t* wcomment = new wchar_t[0xFFFF]();
+				int wlen = GetDlgItemText(hWnd, IDC_COMMENT, wcomment, 0xFFFF);
 				char* acomment = WCHAR_to_SJIS(wcomment, wlen);
 				delete[] wcomment;
+				if (strlen(acomment) >= 0xFFFF) {
+					acomment[0xFFFF] = 0;
+				}
 				
 				nptr[0] = TO_MAGIC('U', 'S', 'E', 'R');
 				nptr[1] = 12 + strlen(acomment) + 1;
