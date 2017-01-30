@@ -8,6 +8,7 @@ wchar_t fileName[MAX_PATH] = {0};
 uint8_t *buffer = nullptr;
 char* gameInfo = nullptr;
 char* comment = nullptr;
+DWORD fileSize = 0;
 
 bool checkMagic(uint8_t* buf) {
 	uint32_t magic[] = {
@@ -122,9 +123,53 @@ int __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
 	else if (uMsg == WM_COMMAND) {
 		switch (LOWORD(wParam)) {
-		case IDC_SAVE:
-			// NYI
-			break;
+		case IDC_SAVE: {
+			if (buffer) {
+				uint32_t offset = *(uint32_t*)&buffer[0xC];
+
+				if (!comment) {
+					// byte 7 is USER chunk count. In th095+ it's always 0.
+					++buffer[7];
+				}
+				// TODO: fix this ZUN hackery
+				uint8_t *nbuffer = new uint8_t[fileSize + 0x1fffe];
+				memset(nbuffer, 0, fileSize + 0x1fffe);
+				// TODO: make this secure
+				memcpy(nbuffer, buffer, offset);
+
+				uint32_t* nptr = (uint32_t*)&nbuffer[offset];
+				
+				// copy over the gameinfo section
+				uint32_t gameInfoSize = 0;
+				if (gameInfo) {
+					gameInfoSize = *(uint32_t*)&gameInfo[0x4];
+					memcpy(nptr, gameInfo, gameInfoSize);
+					// TODO: make all of this ptr conversion magic less annoying to read
+					nptr = (uint32_t*)((uint8_t*)nptr + *(uint32_t*)&gameInfo[0x4]);
+				}
+				
+				// add comment section
+				// NOTE: let's not remove the arbitrary 0x8000 limit, so that we don't crash original implementation.
+				// FIXME: ...except that this limit must be exposed onto SJIS string, not WCHAR one.
+				// Also, the limit could be expanded up to 0xFFFF, GetDlgItemText is the only place where 0x8000 is used.
+				wchar_t* wcomment = new wchar_t[0xFFFF];
+				memset(wcomment, 0, 0xFFFF);
+				int wlen = GetDlgItemText(hWnd, IDC_COMMENT, wcomment, 0x8000);
+				char* acomment = WCHAR_to_SJIS(wcomment, wlen);
+				delete[] wcomment;
+				
+				nptr[0] = TO_MAGIC('U', 'S', 'E', 'R');
+				nptr[1] = 12 + strlen(acomment) + 1;
+				nptr[2] = 1;
+				strcpy((char*)&nptr[3], acomment);
+				writeFile(fileName, offset + gameInfoSize + 12 + strlen(acomment) + 1, nbuffer);
+				delete[] acomment;
+				delete[] nbuffer;
+				delete[] buffer;
+				EndDialog(hWnd, IDC_SAVE);
+			}
+			return 1;
+		}
 		case IDOK:
 		case IDCANCEL:
 		case IDC_CLOSE:
@@ -141,8 +186,7 @@ int __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		buffer = nullptr;
 		gameInfo = nullptr;
 		comment = nullptr;
-		DWORD fileSize;
-
+		
 		if (DragQueryFile((HDROP)wParam, -1, 0, 0) > 0) {
 			DragQueryFile((HDROP)wParam, 0, fileName, MAX_PATH);
 			buffer = readFile(fileName, &fileSize);
