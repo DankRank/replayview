@@ -15,6 +15,7 @@ bool checkMagic(uint8_t* buf) {
 		TO_MAGIC( 'T', '9', 'R', 'P' ), // kaeidzuka (pofv)
 		TO_MAGIC( 't', '9', '5', 'r' ), // bunkachou (stb)
 		TO_MAGIC( 't', '1', '0', 'r' ), // fuujinroku (mof)
+		TO_MAGIC( 'a', 'l', '1', 'r' ), // tasogare sakaba (algostg)
 		TO_MAGIC( 't', '1', '1', 'r' ), // chireiden (sa)
 		TO_MAGIC( 't', '1', '2', 'r' ), // seirensen (ufo)
 		TO_MAGIC( 't', '1', '2', '5' ), // bunkachou (ds)
