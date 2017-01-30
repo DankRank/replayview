@@ -41,6 +41,15 @@ wchar_t* SJIS_to_WCHAR(char* str, DWORD len) {
 	return wstr;
 }
 
+char* WCHAR_to_SJIS(wchar_t* wstr, DWORD wlen) {
+	BOOL b;
+	int len = WideCharToMultiByte(932, 0, wstr, wlen, nullptr, 0, nullptr, &b);
+	char *str = new char[len + 1];
+	WideCharToMultiByte(932, 0, wstr, wlen, str, len, nullptr, &b);
+	str[len] = 0; // just in case original string didn't have one
+	return str;
+}
+
 int locateSections(uint8_t* buf, DWORD fileSize, char** gameInfo, char** comment) {
 	if (buf && fileSize >= 0x10 && checkMagic(buf)) {
 		uint32_t offset = *(uint32_t*)&buf[0xC];
