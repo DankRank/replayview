@@ -242,13 +242,13 @@ int __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		else fileName2++;
 		SetDlgItemText(hWnd, IDC_FILENAME, fileName2);
 		if (d->gameInfo) {
-			wchar_t* wgameInfo = SJIS_to_WCHAR(&d->gameInfo[12], *(DWORD*)&d->gameInfo[4]);
+			wchar_t* wgameInfo = SJIS_to_WCHAR(&d->gameInfo[12], *(DWORD*)&d->gameInfo[4] - 12);
 			SetDlgItemText(hWnd, IDC_GAMEINFO, wgameInfo);
 			delete[] wgameInfo;
 
 		}
 		if (d->comment) {
-			wchar_t* wcomment = SJIS_to_WCHAR(&d->comment[12], *(DWORD*)&d->comment[4]);
+			wchar_t* wcomment = SJIS_to_WCHAR(&d->comment[12], *(DWORD*)&d->comment[4] - 12);
 			SetDlgItemText(hWnd, IDC_COMMENT, wcomment);
 			delete[] wcomment;
 		}
