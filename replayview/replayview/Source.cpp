@@ -126,16 +126,15 @@ int __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		case IDC_SAVE: {
 			if (buffer) {
 				uint32_t offset = *(uint32_t*)&buffer[0xC];
-
-				if (!comment) {
-					// byte 7 is USER chunk count. In th095+ it's always 0.
-					++buffer[7];
-				}
+				int nbSize = fileSize;
 				// TODO: fix this ZUN hackery
-				uint8_t *nbuffer = new uint8_t[fileSize + 0x1fffe];
-				memset(nbuffer, 0, fileSize + 0x1fffe);
-				// TODO: make this secure
-				memcpy(nbuffer, buffer, offset);
+				uint8_t *nbuffer = new uint8_t[nbSize];
+				memset(nbuffer, 0, nbSize);
+				// TODO: check if offset is sane using math.
+				if (memcpy_s(nbuffer, nbSize, buffer, offset)) {
+					delete[] nbuffer;
+					return 1;
+				}
 
 				uint32_t* nptr = (uint32_t*)&nbuffer[offset];
 				
@@ -143,12 +142,19 @@ int __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 				uint32_t gameInfoSize = 0;
 				if (gameInfo) {
 					gameInfoSize = *(uint32_t*)&gameInfo[0x4];
-					memcpy(nptr, gameInfo, gameInfoSize);
+					if (memcpy_s(nptr, nbSize - offset, gameInfo, gameInfoSize)) {
+						delete[] nbuffer;
+						return 1;
+					}
 					// TODO: make all of this ptr conversion magic less annoying to read
 					nptr = (uint32_t*)((uint8_t*)nptr + *(uint32_t*)&gameInfo[0x4]);
 				}
 				
 				// add comment section
+				if (!comment) {
+					// byte 7 is USER chunk count. In th095+ it's always 0.
+					++nbuffer[7];
+				}
 				// NOTE: let's not remove the arbitrary 0xFFFF limit, so that we don't crash original implementation.
 				wchar_t* wcomment = new wchar_t[0xFFFF]();
 				int wlen = GetDlgItemText(hWnd, IDC_COMMENT, wcomment, 0xFFFF);
@@ -158,6 +164,7 @@ int __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 					acomment[0xFFFF] = 0;
 				}
 				
+				// TODO: add more buffer overflow checks
 				nptr[0] = TO_MAGIC('U', 'S', 'E', 'R');
 				nptr[1] = 12 + strlen(acomment) + 1;
 				nptr[2] = 1;
