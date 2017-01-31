@@ -4,7 +4,7 @@
 #include "resource.h"
 #include "Utility.h"
 
-bool checkMagic(uint8_t* buf) {
+bool checkMagic(const uint8_t* buf) {
 	uint32_t magic[] = {
 		TO_MAGIC( 'T', '8', 'R', 'P' ), // eiyashou (in)
 		TO_MAGIC( 'T', '9', 'R', 'P' ), // kaeidzuka (pofv)
@@ -28,7 +28,7 @@ bool checkMagic(uint8_t* buf) {
 	return false;
 }
 
-wchar_t* SJIS_to_WCHAR(char* str, DWORD len) {
+wchar_t* SJIS_to_WCHAR(const char* str, DWORD len) {
 	int wlen = MultiByteToWideChar(932, 0, str, len, nullptr, 0);
 	wchar_t *wstr = new wchar_t[wlen+1];
 	MultiByteToWideChar(932, 0, str, len, wstr, wlen);
@@ -36,7 +36,7 @@ wchar_t* SJIS_to_WCHAR(char* str, DWORD len) {
 	return wstr;
 }
 
-char* WCHAR_to_SJIS(wchar_t* wstr, DWORD wlen) {
+char* WCHAR_to_SJIS(const wchar_t* wstr, DWORD wlen) {
 	BOOL b;
 	int len = WideCharToMultiByte(932, 0, wstr, wlen, nullptr, 0, nullptr, &b);
 	char *str = new char[len + 1];
@@ -81,9 +81,9 @@ int writeFile(const wchar_t* fileName, DWORD fileSize, uint8_t* buf) {
 class DialogData{
 public:
 	wchar_t fileName[MAX_PATH] = { 0 };
-	uint8_t *buffer = nullptr;
-	char* gameInfo = nullptr;
-	char* comment = nullptr;
+	const uint8_t *buffer = nullptr;
+	const char* gameInfo = nullptr;
+	const char* comment = nullptr;
 	DWORD fileSize = 0;
 
 	int locateSections();
@@ -169,7 +169,6 @@ bool DialogData::Save(wchar_t* wcomment, int wlen) {
 	writeFile(fileName, offset + gameInfoSize + 12 + strlen(acomment) + 1, nbuffer);
 	delete[] acomment;
 	delete[] nbuffer;
-	delete[] buffer;
 	return true;
 }
 void DialogData::Cleanup() {
