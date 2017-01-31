@@ -126,7 +126,7 @@ bool DialogData::Save(wchar_t* wcomment, int wlen) {
 	if (!buffer) return false;
 
 	uint32_t offset = *(uint32_t*)&buffer[0xC];
-	int nbSize = fileSize;
+	int nbSize = fileSize + 0x1FFFE;
 	// TODO: fix this ZUN hackery
 	uint8_t *nbuffer = new uint8_t[nbSize];
 	memset(nbuffer, 0, nbSize);
