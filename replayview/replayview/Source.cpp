@@ -1,5 +1,6 @@
 ﻿#include <wchar.h>
 #include <Windows.h>
+#include <Shlwapi.h>
 #include <stdint.h>
 #include "resource.h"
 #include "Utility.h"
@@ -231,16 +232,9 @@ int __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			return 1;
 
 		// filename without path
-		wchar_t *fileName2 = wcsrchr(d->fileName, L'\\');
-		if (!fileName2) {
-			fileName2 = wcsrchr(d->fileName, L'/');
-			if (!fileName2) {
-				fileName2 = d->fileName;
-			}
-			else fileName2++;
-		}
-		else fileName2++;
+		wchar_t *fileName2 = PathFindFileName(d->fileName);
 		SetDlgItemText(hWnd, IDC_FILENAME, fileName2);
+
 		if (d->gameInfo) {
 			wchar_t* wgameInfo = SJIS_to_WCHAR(&d->gameInfo[12], *(DWORD*)&d->gameInfo[4] - 12);
 			SetDlgItemText(hWnd, IDC_GAMEINFO, wgameInfo);
