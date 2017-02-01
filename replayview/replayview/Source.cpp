@@ -79,12 +79,22 @@ int writeFile(const wchar_t* fileName, DWORD fileSize, uint8_t* buf) {
 	}
 }
 
+enum UserChunkType {
+	UCT_GAMEINFO = 0,
+	UCT_COMMENT = 1
+};
+struct UserChunk{
+	uint32_t magic;
+	uint32_t size;
+	uint32_t type;
+	char text[0];
+};
 class DialogData{
 public:
 	wchar_t fileName[MAX_PATH] = { 0 };
 	const uint8_t *buffer = nullptr;
-	const char* gameInfo = nullptr;
-	const char* comment = nullptr;
+	const UserChunk* gameInfo = nullptr;
+	const UserChunk* comment = nullptr;
 	DWORD fileSize = 0;
 
 	int locateSections();
@@ -98,21 +108,22 @@ int DialogData::locateSections() {
 		uint32_t offset = *(uint32_t*)&buffer[0xC];
 		int32_t bytesLeft = fileSize - offset;
 		while (bytesLeft > 0xC) {
-			if (TO_MAGIC('U', 'S', 'E', 'R') == *(uint32_t*)&buffer[offset]) {
-				switch (buffer[offset + 8]) {
-				case 0:
-					gameInfo = (char*)&buffer[offset];
+			UserChunk* thisChunk = (UserChunk*)&buffer[offset];
+			if (TO_MAGIC('U', 'S', 'E', 'R') == thisChunk->magic) {
+				switch (thisChunk->type & 0xFF) {
+				case UCT_GAMEINFO:
+					gameInfo = thisChunk;
 					break;
-				case 1:
-					comment = (char*)&buffer[offset];
+				case UCT_COMMENT:
+					comment = thisChunk;
 					break;
 				}
 			}
-			int32_t section_size = *(uint32_t*)&buffer[offset + 4];
+			int32_t section_size = thisChunk->size;
 			if (section_size > bytesLeft) {
 				section_size = bytesLeft;
 				// Modify the value inside the structure, so that the dialog doesn't read past the EOF
-				*(uint32_t*)&buffer[offset + 4] = bytesLeft;
+				thisChunk->size = bytesLeft;
 			}
 			offset += section_size;
 			bytesLeft -= section_size;
@@ -137,18 +148,17 @@ bool DialogData::Save(wchar_t* wcomment, int wlen) {
 		return false;
 	}
 
-	uint32_t* nptr = (uint32_t*)&nbuffer[offset];
+	UserChunk* nptr = (UserChunk*)&nbuffer[offset];
 
 	// copy over the gameinfo section
 	uint32_t gameInfoSize = 0;
 	if (gameInfo) {
-		gameInfoSize = *(uint32_t*)&gameInfo[0x4];
-		if (memcpy_s(nptr, nbSize - offset, gameInfo, gameInfoSize)) {
+		gameInfoSize = gameInfo->size;
+		if (memcpy_s(nptr, nbSize - offset, gameInfo, gameInfo->size)) {
 			delete[] nbuffer;
 			return false;
 		}
-		// TODO: make all of this ptr conversion magic less annoying to read
-		nptr = (uint32_t*)((uint8_t*)nptr + *(uint32_t*)&gameInfo[0x4]);
+		nptr = (UserChunk*)&nbuffer[offset + gameInfo->size];
 	}
 
 	// add comment section
@@ -163,10 +173,10 @@ bool DialogData::Save(wchar_t* wcomment, int wlen) {
 	}
 
 	// TODO: add more buffer overflow checks
-	nptr[0] = TO_MAGIC('U', 'S', 'E', 'R');
-	nptr[1] = 12 + strlen(acomment) + 1;
-	nptr[2] = 1;
-	strcpy((char*)&nptr[3], acomment);
+	nptr->magic = TO_MAGIC('U', 'S', 'E', 'R');
+	nptr->size = 12 + strlen(acomment) + 1;
+	nptr->type = UCT_COMMENT;
+	strcpy(nptr->text, acomment);
 	writeFile(fileName, offset + gameInfoSize + 12 + strlen(acomment) + 1, nbuffer);
 	delete[] acomment;
 	delete[] nbuffer;
@@ -236,13 +246,13 @@ int __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		SetDlgItemText(hWnd, IDC_FILENAME, fileName2);
 
 		if (d->gameInfo) {
-			wchar_t* wgameInfo = SJIS_to_WCHAR(&d->gameInfo[12], *(DWORD*)&d->gameInfo[4] - 12);
+			wchar_t* wgameInfo = SJIS_to_WCHAR(d->gameInfo->text, d->gameInfo->size - 12);
 			SetDlgItemText(hWnd, IDC_GAMEINFO, wgameInfo);
 			delete[] wgameInfo;
 
 		}
 		if (d->comment) {
-			wchar_t* wcomment = SJIS_to_WCHAR(&d->comment[12], *(DWORD*)&d->comment[4] - 12);
+			wchar_t* wcomment = SJIS_to_WCHAR(d->comment->text, d->comment->size - 12);
 			SetDlgItemText(hWnd, IDC_COMMENT, wcomment);
 			delete[] wcomment;
 		}
