@@ -91,7 +91,7 @@ struct UserChunk{
 };
 class DialogData{
 public:
-	wchar_t fileName[MAX_PATH] = { 0 };
+	wchar_t *fileName = nullptr;
 	const uint8_t *buffer = nullptr;
 	const UserChunk* gameInfo = nullptr;
 	const UserChunk* comment = nullptr;
@@ -135,7 +135,7 @@ int DialogData::locateSections() {
 	}
 }
 bool DialogData::Save(wchar_t* wcomment, int wlen) {
-	if (!buffer) return false;
+	if (!fileName || !buffer) return false;
 
 	uint32_t offset = *(uint32_t*)&buffer[0xC];
 	int nbSize = fileSize + 0x1FFFE;
@@ -183,6 +183,8 @@ bool DialogData::Save(wchar_t* wcomment, int wlen) {
 	return true;
 }
 void DialogData::Cleanup() {
+	delete[] fileName;
+	fileName = nullptr;
 	delete[] buffer;
 	buffer = nullptr;
 	gameInfo = nullptr;
@@ -230,6 +232,8 @@ int __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		d->Cleanup();
 		
 		if (DragQueryFile((HDROP)wParam, -1, 0, 0) > 0) {
+			UINT len = DragQueryFile((HDROP)wParam, 0, nullptr, MAX_PATH);
+			d->fileName = new wchar_t[len + 1];
 			DragQueryFile((HDROP)wParam, 0, d->fileName, MAX_PATH);
 			d->buffer = readFile(d->fileName, &d->fileSize);
 			if (d->locateSections()) {
