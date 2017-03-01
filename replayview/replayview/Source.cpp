@@ -1,4 +1,5 @@
 ﻿#include <wchar.h>
+#include <tchar.h>
 #include <Windows.h>
 #include <Shlwapi.h>
 #include <stdint.h>
@@ -46,7 +47,7 @@ char* WCHAR_to_SJIS(const wchar_t* wstr, DWORD wlen) {
 	return str;
 }
 
-uint8_t *readFile(const wchar_t* fileName, DWORD* outFileSize) {
+uint8_t *readFile(const TCHAR* fileName, DWORD* outFileSize) {
 	HANDLE file = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN | FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (file == INVALID_HANDLE_VALUE) {
 		return nullptr;
@@ -63,7 +64,7 @@ uint8_t *readFile(const wchar_t* fileName, DWORD* outFileSize) {
 	return buf;
 }
 
-int writeFile(const wchar_t* fileName, DWORD fileSize, uint8_t* buf) {
+int writeFile(const TCHAR* fileName, DWORD fileSize, uint8_t* buf) {
 	HANDLE file = CreateFile(fileName, GENERIC_WRITE, FILE_SHARE_READ, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (file == INVALID_HANDLE_VALUE) {
 		return -1;
@@ -91,14 +92,14 @@ struct UserChunk{
 };
 class DialogData{
 public:
-	wchar_t *fileName = nullptr;
+	TCHAR *fileName = nullptr;
 	const uint8_t *buffer = nullptr;
 	const UserChunk* gameInfo = nullptr;
 	const UserChunk* comment = nullptr;
 	DWORD fileSize = 0;
 
 	int locateSections();
-	bool Save(wchar_t* wcomment, int wlen);
+	bool Save(TCHAR* wcomment, int wlen);
 	void Cleanup();
 	~DialogData();
 };
@@ -134,7 +135,7 @@ int DialogData::locateSections() {
 		return 1;
 	}
 }
-bool DialogData::Save(wchar_t* wcomment, int wlen) {
+bool DialogData::Save(TCHAR* wcomment, int wlen) {
 	if (!fileName || !buffer) return false;
 
 	uint32_t offset = *(uint32_t*)&buffer[0xC];
@@ -210,7 +211,7 @@ INT_PTR __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	else if (uMsg == WM_COMMAND) {
 		switch (LOWORD(wParam)) {
 		case IDC_SAVE: {
-			wchar_t* wcomment = new wchar_t[0xFFFF]();
+			TCHAR* wcomment = new TCHAR[0xFFFF]();
 			int wlen = GetDlgItemText(hWnd, IDC_COMMENT, wcomment, 0xFFFF);
 			if (d->Save(wcomment, wlen)) {
 				EndDialog(hWnd, IDC_SAVE);
@@ -233,11 +234,11 @@ INT_PTR __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		
 		if (DragQueryFile((HDROP)wParam, -1, 0, 0) > 0) {
 			UINT len = DragQueryFile((HDROP)wParam, 0, nullptr, MAX_PATH);
-			d->fileName = new wchar_t[len + 1];
+			d->fileName = new TCHAR[len + 1];
 			DragQueryFile((HDROP)wParam, 0, d->fileName, MAX_PATH);
 			d->buffer = readFile(d->fileName, &d->fileSize);
 			if (d->locateSections()) {
-				MessageBox(hWnd, L"これはリプレイファイルではないか\nバージョンが違う", L"失敗", 0);
+				MessageBox(hWnd, _T("これはリプレイファイルではないか\nバージョンが違う"), _T("失敗"), 0);
 				d->Cleanup();
 			}
 		}
@@ -246,7 +247,7 @@ INT_PTR __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			return 1;
 
 		// filename without path
-		wchar_t *fileName2 = PathFindFileName(d->fileName);
+		TCHAR *fileName2 = PathFindFileName(d->fileName);
 		SetDlgItemText(hWnd, IDC_FILENAME, fileName2);
 
 		if (d->gameInfo) {
@@ -261,7 +262,7 @@ INT_PTR __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			delete[] wcomment;
 		}
 		else {
-			SetDlgItemText(hWnd, IDC_COMMENT, L"");
+			SetDlgItemText(hWnd, IDC_COMMENT, _T(""));
 		}
 		return 1;
 	}
