@@ -174,10 +174,10 @@ bool DialogData::Save(wchar_t* wcomment, int wlen) {
 
 	// TODO: add more buffer overflow checks
 	nptr->magic = TO_MAGIC('U', 'S', 'E', 'R');
-	nptr->size = 12 + strlen(acomment) + 1;
+	nptr->size = (uint32_t)( 12 + strlen(acomment) + 1 );
 	nptr->type = UCT_COMMENT;
 	strcpy(nptr->text, acomment);
-	writeFile(fileName, offset + gameInfoSize + 12 + strlen(acomment) + 1, nbuffer);
+	writeFile(fileName, (DWORD)( offset + gameInfoSize + 12 + strlen(acomment) + 1 ), nbuffer);
 	delete[] acomment;
 	delete[] nbuffer;
 	return true;
@@ -194,11 +194,11 @@ void DialogData::Cleanup() {
 DialogData::~DialogData() {
 	Cleanup();
 }
-int __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	DialogData *d = reinterpret_cast<DialogData*>( GetWindowLongPtr(hWnd, GWL_USERDATA) );
+INT_PTR __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	DialogData *d = reinterpret_cast<DialogData*>( GetWindowLongPtr(hWnd, GWLP_USERDATA) );
 
 	if (uMsg == WM_INITDIALOG) {
-		SetWindowLongPtr(hWnd, GWL_USERDATA, reinterpret_cast<LONG_PTR>( new DialogData() ));
+		SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( new DialogData() ));
 		return 1;
 	}
 
