@@ -1,5 +1,5 @@
 #pragma once
-#include <stdint.h>
+#include "compat.h"
 
 // ARRAY_SIZE and endianness check are from GerbilSoft/rom-properties
 

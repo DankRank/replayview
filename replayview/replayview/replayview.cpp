@@ -1,8 +1,8 @@
-﻿#include <wchar.h>
+#include <wchar.h>
 #include <tchar.h>
 #include <Windows.h>
 #include <Shlwapi.h>
-#include <stdint.h>
+#include "compat.h"
 #include "resource.h"
 #include "Utility.h"
 
@@ -92,17 +92,26 @@ struct UserChunk{
 };
 class DialogData{
 public:
-	TCHAR *fileName = nullptr;
-	const uint8_t *buffer = nullptr;
-	const UserChunk* gameInfo = nullptr;
-	const UserChunk* comment = nullptr;
-	DWORD fileSize = 0;
+	TCHAR *fileName;
+	const uint8_t *buffer;
+	const UserChunk* gameInfo;
+	const UserChunk* comment;
+	DWORD fileSize;
 
+	DialogData();
 	int locateSections();
 	bool Save(TCHAR* wcomment, int wlen);
 	void Cleanup();
 	~DialogData();
 };
+
+DialogData::DialogData(){
+	fileName = nullptr;
+	buffer = nullptr;
+	gameInfo = nullptr;
+	comment = nullptr;
+	fileSize = 0;
+}
 
 int DialogData::locateSections() {
 	if (buffer && fileSize >= 0x10 && checkMagic(buffer)) {
@@ -186,7 +195,7 @@ bool DialogData::Save(TCHAR* wcomment, int wlen) {
 void DialogData::Cleanup() {
 	delete[] fileName;
 	fileName = nullptr;
-	delete[] buffer;
+	delete[] (void*)buffer; // TODO: figure out why VS6 doesn't like this
 	buffer = nullptr;
 	gameInfo = nullptr;
 	comment = nullptr;
@@ -195,7 +204,7 @@ void DialogData::Cleanup() {
 DialogData::~DialogData() {
 	Cleanup();
 }
-INT_PTR __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	DialogData *d = reinterpret_cast<DialogData*>( GetWindowLongPtr(hWnd, GWLP_USERDATA) );
 
 	if (uMsg == WM_INITDIALOG) {
@@ -238,7 +247,7 @@ INT_PTR __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			DragQueryFile((HDROP)wParam, 0, d->fileName, MAX_PATH);
 			d->buffer = readFile(d->fileName, &d->fileSize);
 			if (d->locateSections()) {
-				MessageBox(hWnd, _T("これはリプレイファイルではないか\nバージョンが違う"), _T("失敗"), 0);
+				MessageBox(hWnd, FAIL_TEXT, FAIL_CAPTION, 0);
 				d->Cleanup();
 			}
 		}
@@ -270,6 +279,6 @@ INT_PTR __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-	DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), nullptr, DialogFunc);
+	DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), nullptr, &DialogFunc);
 	return 0;
 }
