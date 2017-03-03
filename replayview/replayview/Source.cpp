@@ -53,7 +53,7 @@ uint8_t *readFile(const TCHAR* fileName, DWORD* outFileSize) {
 		return nullptr;
 	}
 	DWORD fileSize = GetFileSize(file, nullptr);
-	uint8_t* buf = (uint8_t*)malloc(fileSize);
+	uint8_t* buf = new uint8_t[fileSize];
 	if (!buf) {
 		CloseHandle(file);
 		return nullptr;
