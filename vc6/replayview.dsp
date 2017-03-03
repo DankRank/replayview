@@ -47,7 +47,7 @@ RSC=rc.exe
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
-# ADD RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x411 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -73,7 +73,7 @@ LINK32=link.exe
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
-# ADD RSC /l 0x409 /d "_DEBUG"
+# ADD RSC /l 0x411 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -108,10 +108,6 @@ SOURCE=..\replayview\replayview\resource.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\replayview\replayview\text2.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\replayview\replayview\utility.h
 # End Source File
 # End Group
@@ -120,7 +116,12 @@ SOURCE=..\replayview\replayview\utility.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
+SOURCE=..\replayview\replayview\resource.rc
+# End Source File
+# Begin Source File
+
 SOURCE=..\replayview\replayview\resource2.rc
+# PROP Exclude_From_Build 1
 # End Source File
 # End Group
 # End Target

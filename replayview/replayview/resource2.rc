@@ -14,3 +14,10 @@ BEGIN
 	PUSHBUTTON "Close", IDC_CLOSE, 162, 225, 50, 14
 	LTEXT "Please drop the replay file", -1, 4, 4, 153, 8
 END
+
+STRINGTABLE
+LANGUAGE LANG_JAPANESE, 0x1
+BEGIN
+	IDS_ERR_CAPTION "Error"
+	IDS_ERR_TEXT "Are you sure this is a replay file?\nVersion is wrong."
+END

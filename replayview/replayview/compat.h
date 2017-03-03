@@ -13,10 +13,8 @@ typedef unsigned short uint16_t;
 typedef unsigned long uint32_t;
 typedef int intptr_t;
 typedef long LONG_PTR;
-#include "text2.h"
 #else
 #include <stdint.h>
-#include "text.h"
 #endif
 
 // C++11 replacements

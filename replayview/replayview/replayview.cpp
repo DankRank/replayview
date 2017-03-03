@@ -2,6 +2,7 @@
 #include <tchar.h>
 #include <Windows.h>
 #include <Shlwapi.h>
+#include <cstdlib>
 #include "compat.h"
 #include "resource.h"
 #include "Utility.h"
@@ -92,25 +93,35 @@ struct UserChunk{
 };
 class DialogData{
 public:
+	HINSTANCE hInstance;
 	TCHAR *fileName;
 	const uint8_t *buffer;
 	const UserChunk* gameInfo;
 	const UserChunk* comment;
 	DWORD fileSize;
-
-	DialogData();
+	TCHAR errCaption[256];
+	TCHAR errText[256];
+	
+	explicit DialogData(HINSTANCE hInst);
 	int locateSections();
 	bool Save(TCHAR* wcomment, int wlen);
 	void Cleanup();
 	~DialogData();
 };
 
-DialogData::DialogData(){
+DialogData::DialogData(HINSTANCE hInst){
+	hInstance = hInst;
 	fileName = nullptr;
 	buffer = nullptr;
 	gameInfo = nullptr;
 	comment = nullptr;
 	fileSize = 0;
+	if (!LoadString(hInstance, IDS_ERR_CAPTION, errCaption, ARRAY_SIZE(errCaption))) {
+		DebugBreak();
+	}
+	if (!LoadString(hInstance, IDS_ERR_TEXT, errText, ARRAY_SIZE(errText))) {
+		DebugBreak();
+	}
 }
 
 int DialogData::locateSections() {
@@ -208,7 +219,7 @@ intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	DialogData *d = reinterpret_cast<DialogData*>( GetWindowLongPtr(hWnd, GWLP_USERDATA) );
 
 	if (uMsg == WM_INITDIALOG) {
-		SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( new DialogData() ));
+		SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( new DialogData((HINSTANCE)lParam) ));
 		return 1;
 	}
 
@@ -247,7 +258,7 @@ intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			DragQueryFile((HDROP)wParam, 0, d->fileName, MAX_PATH);
 			d->buffer = readFile(d->fileName, &d->fileSize);
 			if (d->locateSections()) {
-				MessageBox(hWnd, FAIL_TEXT, FAIL_CAPTION, 0);
+				MessageBox(hWnd, d->errText, d->errCaption, 0);
 				d->Cleanup();
 			}
 		}
@@ -279,6 +290,6 @@ intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	return 0;
 }
 int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-	DialogBox(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), nullptr, &DialogFunc);
+	DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), nullptr, &DialogFunc, (LPARAM)hInstance);
 	return 0;
 }
