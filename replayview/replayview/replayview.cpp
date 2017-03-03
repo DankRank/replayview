@@ -253,9 +253,9 @@ intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		d->Cleanup();
 		
 		if (DragQueryFile((HDROP)wParam, -1, 0, 0) > 0) {
-			UINT len = DragQueryFile((HDROP)wParam, 0, nullptr, MAX_PATH);
+			UINT len = DragQueryFile((HDROP)wParam, 0, nullptr, 0);
 			d->fileName = new TCHAR[len + 1];
-			DragQueryFile((HDROP)wParam, 0, d->fileName, MAX_PATH);
+			DragQueryFile((HDROP)wParam, 0, d->fileName, len+1);
 			d->buffer = readFile(d->fileName, &d->fileSize);
 			if (d->locateSections()) {
 				MessageBox(hWnd, d->errText, d->errCaption, 0);
