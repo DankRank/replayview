@@ -1,0 +1,61 @@
+Version 1.1.2
+-------------
+- VC++: removed dependency on __chkstk() symbol from CRT (Henrik Haftmann)
+
+Version 1.1.1
+-------------
+- MZLU was renamed to Opencow and the DLL is now opencow.dll
+- the library now exists under two names: libunicows.lib and unicows.lib;
+  this makes it possible to force use of libunicows even on systems that
+  have MS version of unicows.lib installed
+
+Version 1.1.0
+-------------
+- added support for MZLU (Mozilla Layer for Unicode)
+- fixed _PfnLoadUnicows to work in exactly same manner as in Microsoft
+  version
+
+Version 1.0.0
+-------------
+- implemented GetProcAddress wrapping (Alexey A. Popoff)
+- libunicows symbols loading is now thread-safe
+
+Version 0.7.0
+-------------
+- added 13 more symbols found in latest unicows.dll
+
+Version 0.6.5
+-------------
+- native DigitalMars import library (Masashi Ktamura)
+- native LCC-Win32 import library (Thiadmer Riemersma)
+
+Version 0.6.4
+-------------
+- native (Open)Watcom C/C++ import library (Thiadmer Riemersma)
+
+Version 0.6.3
+-------------
+- fixed winspool.drv loading (Tom Bishop)
+- native Borland C++ import library which doesn't use
+  unicows_wrapper.dll (Seclan)
+
+Version 0.6.2
+-------------
+- added more symbols
+
+Version 0.6.1
+-------------
+- unicows_wrapper.dll was made almost twice smaller
+- 0.6 binaries had some wrong symbols, this is now fixed
+
+Version 0.6
+-----------
+- added unicows_wrapper.dll, which is a helper that makes it possible to
+  use libunicows with *any* compiler, independently of the way its
+  import libraries work
+- added import library for Borland C++ (uses unicows_wrapper.dll)
+
+Version 0.5
+-----------
+- initial release
+
