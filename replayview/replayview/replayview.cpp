@@ -159,7 +159,7 @@ bool DialogData::Save(TCHAR* wcomment, int wlen) {
 	if (!fileName || !buffer) return false;
 
 	uint32_t offset = *(uint32_t*)&buffer[0xC];
-	int nbSize = fileSize + 0x1FFFE;
+	int nbSize = fileSize + 0xFFFF * 2;
 	// TODO: fix this ZUN hackery
 	uint8_t *nbuffer = new uint8_t[nbSize];
 	memset(nbuffer, 0, nbSize);
@@ -198,7 +198,7 @@ bool DialogData::Save(TCHAR* wcomment, int wlen) {
 	nptr->size = (uint32_t)( 12 + strlen(acomment) + 1 );
 	nptr->type = UCT_COMMENT;
 	strcpy(nptr->text, acomment);
-	writeFile(fileName, (DWORD)( offset + gameInfoSize + 12 + strlen(acomment) + 1 ), nbuffer);
+	writeFile(fileName, (DWORD)( offset + gameInfoSize + nptr->size ), nbuffer);
 	delete[] acomment;
 	delete[] nbuffer;
 	return true;
