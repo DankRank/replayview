@@ -89,7 +89,9 @@ struct UserChunk{
 	uint32_t magic;
 	uint32_t size;
 	uint32_t type;
-	char text[0];
+	char* text() const {
+		return (char*)(this + 1);
+	}
 };
 class DialogData{
 public:
@@ -197,7 +199,7 @@ bool DialogData::Save(TCHAR* wcomment, int wlen) {
 	nptr->magic = TO_MAGIC('U', 'S', 'E', 'R');
 	nptr->size = (uint32_t)( 12 + strlen(acomment) + 1 );
 	nptr->type = UCT_COMMENT;
-	strcpy(nptr->text, acomment);
+	strcpy(nptr->text(), acomment);
 	writeFile(fileName, (DWORD)( offset + gameInfoSize + nptr->size ), nbuffer);
 	delete[] acomment;
 	delete[] nbuffer;
@@ -271,13 +273,13 @@ intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		SetDlgItemText(hWnd, IDC_FILENAME, fileName2);
 
 		if (d->gameInfo) {
-			wchar_t* wgameInfo = SJIS_to_WCHAR(d->gameInfo->text, d->gameInfo->size - 12);
+			wchar_t* wgameInfo = SJIS_to_WCHAR(d->gameInfo->text(), d->gameInfo->size - 12);
 			SetDlgItemText(hWnd, IDC_GAMEINFO, wgameInfo);
 			delete[] wgameInfo;
 
 		}
 		if (d->comment) {
-			wchar_t* wcomment = SJIS_to_WCHAR(d->comment->text, d->comment->size - 12);
+			wchar_t* wcomment = SJIS_to_WCHAR(d->comment->text(), d->comment->size - 12);
 			SetDlgItemText(hWnd, IDC_COMMENT, wcomment);
 			delete[] wcomment;
 		}
