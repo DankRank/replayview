@@ -116,12 +116,17 @@ SOURCE=..\replayview\replayview\utility.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=..\replayview\replayview\resource.rc
+SOURCE=..\replayview\replayview\English.rc
+# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
-SOURCE=..\replayview\replayview\resource2.rc
+SOURCE=..\replayview\replayview\Japanese.rc
 # PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=..\replayview\replayview\resource.rc
 # End Source File
 # End Group
 # End Target
