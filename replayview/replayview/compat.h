@@ -14,9 +14,9 @@ typedef int intptr_t;
 #endif
 
 // C++11 replacements
-#if __cplusplus < 201103L
+#if !(defined(_MSC_VER) && _MSC_VER >=1900) && __cplusplus < 201103L
 #define nullptr NULL
 #define constexpr const
 //TODO: implement this as an actual function
-#define memcpy_s(a,b,c,d) (memcpy(a,c,d),0)
+#define memcpy_s(a,b,c,d) (memcpy(a,c,min(b,d)),0)
 #endif
