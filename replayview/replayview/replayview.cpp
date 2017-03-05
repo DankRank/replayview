@@ -85,6 +85,7 @@ enum UserChunkType {
 	UCT_GAMEINFO = 0,
 	UCT_COMMENT = 1
 };
+
 struct UserChunk{
 	uint32_t magic;
 	uint32_t size;
@@ -93,6 +94,9 @@ struct UserChunk{
 		return (char*)(this + 1);
 	}
 };
+
+static constexpr TCHAR *REPLAY_VIEW_PROP = _T("ReplayViewProp");
+
 class DialogData{
 public:
 	HINSTANCE hInstance;
@@ -109,6 +113,10 @@ public:
 	bool Save(TCHAR* wcomment, int wlen);
 	void Cleanup();
 	~DialogData();
+	
+	static inline void Prop(HWND hWnd, DialogData *d);
+	static inline DialogData* Prop(HWND hWnd);
+	static inline void DelProp(HWND hWnd);
 private:
 	TCHAR* GetResourceString(UINT sid);
 };
@@ -230,22 +238,36 @@ DialogData::~DialogData() {
 	delete[] errCaption;
 	delete[] errText;
 }
-intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	DialogData *d = reinterpret_cast<DialogData*>( GetWindowLongPtr(hWnd, GWLP_USERDATA) );
 
+inline void DialogData::Prop(HWND hWnd, DialogData *d) {
+	SetProp(hWnd, REPLAY_VIEW_PROP, reinterpret_cast<HANDLE>(d));
+}
+
+inline DialogData* DialogData::Prop(HWND hWnd) {
+	return reinterpret_cast<DialogData*>(GetProp(hWnd, REPLAY_VIEW_PROP));
+}
+
+inline void DialogData::DelProp(HWND hWnd) {
+	RemoveProp(hWnd, REPLAY_VIEW_PROP);
+}
+
+intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	if (uMsg == WM_INITDIALOG) {
-		SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( new DialogData((HINSTANCE)lParam) ));
+		DialogData::Prop(hWnd, reinterpret_cast<DialogData*>(lParam));
 		return 1;
 	}
 
 	else if (uMsg == WM_NCDESTROY) {
-		delete d;
+		// MSDN97 says that Prop should be removed in WM_DESTROY, but I think it wouldn't matter.
+		DialogData::DelProp(hWnd);
 		return 1;
 	}
 
 	else if (uMsg == WM_COMMAND) {
 		switch (LOWORD(wParam)) {
 		case IDC_SAVE: {
+			DialogData *d = DialogData::Prop(hWnd);
+
 			TCHAR* wcomment = new TCHAR[0xFFFF]();
 			int wlen = GetDlgItemText(hWnd, IDC_COMMENT, wcomment, 0xFFFF);
 			if (d->Save(wcomment, wlen)) {
@@ -263,9 +285,10 @@ intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	}
 
 	else if (uMsg == WM_DROPFILES) {
-		SetForegroundWindow(hWnd);
-
+		DialogData *d = DialogData::Prop(hWnd);
 		d->Cleanup();
+
+		SetForegroundWindow(hWnd);
 		
 		if (DragQueryFile((HDROP)wParam, -1, 0, 0) > 0) {
 			UINT len = DragQueryFile((HDROP)wParam, 0, nullptr, 0);
@@ -278,6 +301,7 @@ intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			}
 		}
 		DragFinish((HDROP)wParam);
+
 		if (!d->buffer)
 			return 1;
 
@@ -305,6 +329,8 @@ intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	return 0;
 }
 int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-	DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), nullptr, &DialogFunc, (LPARAM)hInstance);
+	DialogData *d = new DialogData(hInstance);
+	DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), nullptr, &DialogFunc, reinterpret_cast<LPARAM>(d));
+	delete d;
 	return 0;
 }
