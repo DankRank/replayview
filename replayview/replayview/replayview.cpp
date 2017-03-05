@@ -105,8 +105,8 @@ public:
 	const UserChunk* gameInfo;
 	const UserChunk* comment;
 	DWORD fileSize;
-	TCHAR *errCaption;
-	TCHAR *errText;
+	wchar_t *errCaption;
+	wchar_t *errText;
 	
 	explicit DialogData(HINSTANCE hInst);
 	int locateSections();
@@ -121,15 +121,35 @@ private:
 	TCHAR* GetResourceString(UINT sid);
 };
 
-TCHAR* DialogData::GetResourceString(UINT sid) {
-	const TCHAR *str;
-	int len = LoadString(hInstance, sid, (LPTSTR)&str, 0);
+size_t LoadStringSafe(HINSTANCE hInst, UINT sid, const wchar_t**outstr, WORD lang = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL)) {
+	*outstr = nullptr;
+
+	HRSRC hResInfo = FindResourceEx(hInst, RT_STRING, MAKEINTRESOURCE(sid / 16 + 1), lang);
+	if (!hResInfo) return 0;
+	HGLOBAL hGlobal = LoadResource(hInst, hResInfo);
+	if (!hGlobal) return 0;
+	wchar_t* str = (wchar_t*)LockResource(hGlobal);
+	if (!str) return 0;
+
+	// Seek to our string
+	for (unsigned i = 0; i<sid % 16; i++) {
+		str += 1 + (WORD)*str;
+	}
+
+	WORD len = (WORD)*str;
+	*outstr = ++str;
+	return len;
+}
+
+wchar_t* DialogData::GetResourceString(UINT sid) {
+	const wchar_t *str;
+	int len = LoadStringSafe(hInstance, sid, &str);
 	if (!len) {
 		DebugBreak();
-		return new TCHAR();
+		return new wchar_t();
 	}
-	TCHAR* rvstr = new TCHAR[len+1];
-	memcpy(rvstr, str, len * sizeof(TCHAR));
+	wchar_t* rvstr = new wchar_t[len+1];
+	memcpy(rvstr, str, len * sizeof(wchar_t));
 	rvstr[len] = 0;
 	return rvstr;
 }
