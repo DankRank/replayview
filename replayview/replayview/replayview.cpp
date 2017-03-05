@@ -101,15 +101,30 @@ public:
 	const UserChunk* gameInfo;
 	const UserChunk* comment;
 	DWORD fileSize;
-	TCHAR errCaption[256];
-	TCHAR errText[256];
+	TCHAR *errCaption;
+	TCHAR *errText;
 	
 	explicit DialogData(HINSTANCE hInst);
 	int locateSections();
 	bool Save(TCHAR* wcomment, int wlen);
 	void Cleanup();
 	~DialogData();
+private:
+	TCHAR* GetResourceString(UINT sid);
 };
+
+TCHAR* DialogData::GetResourceString(UINT sid) {
+	const TCHAR *str;
+	int len = LoadString(hInstance, sid, (LPTSTR)&str, 0);
+	if (!len) {
+		DebugBreak();
+		return new TCHAR();
+	}
+	TCHAR* rvstr = new TCHAR[len+1];
+	memcpy(rvstr, str, len * sizeof(TCHAR));
+	rvstr[len] = 0;
+	return rvstr;
+}
 
 DialogData::DialogData(HINSTANCE hInst){
 	hInstance = hInst;
@@ -118,12 +133,8 @@ DialogData::DialogData(HINSTANCE hInst){
 	gameInfo = nullptr;
 	comment = nullptr;
 	fileSize = 0;
-	if (!LoadString(hInstance, IDS_ERR_CAPTION, errCaption, ARRAY_SIZE(errCaption))) {
-		DebugBreak();
-	}
-	if (!LoadString(hInstance, IDS_ERR_TEXT, errText, ARRAY_SIZE(errText))) {
-		DebugBreak();
-	}
+	errCaption = GetResourceString(IDS_ERR_CAPTION);
+	errText = GetResourceString(IDS_ERR_TEXT);
 }
 
 int DialogData::locateSections() {
@@ -216,6 +227,8 @@ void DialogData::Cleanup() {
 }
 DialogData::~DialogData() {
 	Cleanup();
+	delete[] errCaption;
+	delete[] errText;
 }
 intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	DialogData *d = reinterpret_cast<DialogData*>( GetWindowLongPtr(hWnd, GWLP_USERDATA) );
