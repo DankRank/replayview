@@ -7,6 +7,7 @@
 #include "resource.h"
 #include "Utility.h"
 
+
 bool checkMagic(const uint8_t* buf) {
 	uint32_t magic[] = {
 		TO_MAGIC( 'T', '8', 'R', 'P' ), // eiyashou (in)
@@ -95,11 +96,14 @@ struct UserChunk{
 	}
 };
 
+intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
 static constexpr TCHAR *REPLAY_VIEW_PROP = _T("ReplayViewProp");
 
 class DialogData{
 public:
 	HINSTANCE hInstance;
+	UINT langId;
 	TCHAR *fileName;
 	const uint8_t *buffer;
 	const UserChunk* gameInfo;
@@ -108,33 +112,49 @@ public:
 	wchar_t *errCaption;
 	wchar_t *errText;
 	
-	explicit DialogData(HINSTANCE hInst);
+	DialogData(HINSTANCE hInst, UINT lang);
 	int locateSections();
 	bool Save(TCHAR* wcomment, int wlen);
 	void Cleanup();
 	~DialogData();
 	
+	intptr_t Run();
+
 	static inline void Prop(HWND hWnd, DialogData *d);
 	static inline DialogData* Prop(HWND hWnd);
 	static inline void DelProp(HWND hWnd);
 private:
-	WORD LoadStringSafe(HINSTANCE hinst, UINT uId, const wchar_t **outstr, WORD langId = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL));
+	void* LoadAndLockResource(HINSTANCE hinst, LPCTSTR type, LPCTSTR name, WORD langId = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL));
+	WORD LoadStringSafe(HINSTANCE hinst, UINT uId, const wchar_t **outstr);
 	TCHAR* GetResourceString(UINT sid);
 };
 
-WORD DialogData::LoadStringSafe(HINSTANCE hinst, UINT uId, const wchar_t **outstr, WORD langId) {
-	wchar_t* pwsz = nullptr;
-	HRSRC hrsrc = FindResourceEx(hinst, RT_STRING, MAKEINTRESOURCE(uId / 16 + 1), langId);
+intptr_t DialogData::Run() {
+	DLGTEMPLATE *dlg = reinterpret_cast<DLGTEMPLATE*>( LoadAndLockResource(hInstance, RT_DIALOG, MAKEINTRESOURCE(IDD_DIALOG1), langId) );
+	if (!dlg) {
+		MessageBoxEx(nullptr, _T("Couldn't load dialog"), nullptr, 0, langId);
+		return -1;
+	}
+	return DialogBoxIndirectParam(hInstance, dlg, nullptr, &DialogFunc, reinterpret_cast<LPARAM>(this));
+}
+
+void* DialogData::LoadAndLockResource(HINSTANCE hinst, LPCTSTR type, LPCTSTR name, WORD langId ) {
+	HRSRC hrsrc = FindResourceEx(hinst, type, name, langId);
 	if (hrsrc) {
 		HGLOBAL hglob = LoadResource(hinst, hrsrc);
 		if (hglob) {
-			pwsz = reinterpret_cast<wchar_t*>( LockResource(hglob) );
-			if (pwsz) {
-				// Seek to our string
-				for (unsigned i = 0; i < uId % 16; i++) {
-					pwsz += 1 + (WORD)*pwsz;
-				}
-			}
+			return LockResource(hglob);
+		}
+	}
+	return nullptr;
+}
+
+WORD DialogData::LoadStringSafe(HINSTANCE hinst, UINT uId, const wchar_t **outstr) {
+	wchar_t* pwsz = reinterpret_cast<wchar_t*>( LoadAndLockResource(hinst, RT_STRING, MAKEINTRESOURCE(uId / 16 + 1), langId) );
+	if (pwsz) {
+		// Seek to our string
+		for (unsigned i = 0; i < uId % 16; i++) {
+			pwsz += 1 + (WORD)*pwsz;
 		}
 	}
 	
@@ -150,7 +170,6 @@ wchar_t* DialogData::GetResourceString(UINT sid) {
 	const wchar_t *str;
 	size_t len = LoadStringSafe(hInstance, sid, &str);
 	if (!len) {
-		DebugBreak();
 		return new wchar_t();
 	}
 	wchar_t* rvstr = new wchar_t[len+1];
@@ -159,8 +178,9 @@ wchar_t* DialogData::GetResourceString(UINT sid) {
 	return rvstr;
 }
 
-DialogData::DialogData(HINSTANCE hInst){
+DialogData::DialogData(HINSTANCE hInst, UINT lang){
 	hInstance = hInst;
+	langId = lang;
 	fileName = nullptr;
 	buffer = nullptr;
 	gameInfo = nullptr;
@@ -321,7 +341,7 @@ intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			DragQueryFile((HDROP)wParam, 0, d->fileName, len+1);
 			d->buffer = readFile(d->fileName, &d->fileSize);
 			if (d->locateSections()) {
-				MessageBox(hWnd, d->errText, d->errCaption, 0);
+				MessageBoxEx(hWnd, d->errText, d->errCaption, 0, d->langId);
 				d->Cleanup();
 			}
 		}
@@ -353,9 +373,9 @@ intptr_t __stdcall DialogFunc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 	return 0;
 }
+
+
 int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-	DialogData *d = new DialogData(hInstance);
-	DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_DIALOG1), nullptr, &DialogFunc, reinterpret_cast<LPARAM>(d));
-	delete d;
+	DialogData(hInstance, MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL)).Run();
 	return 0;
 }
