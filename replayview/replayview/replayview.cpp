@@ -118,32 +118,37 @@ public:
 	static inline DialogData* Prop(HWND hWnd);
 	static inline void DelProp(HWND hWnd);
 private:
+	WORD LoadStringSafe(HINSTANCE hinst, UINT uId, const wchar_t **outstr, WORD langId = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL));
 	TCHAR* GetResourceString(UINT sid);
 };
 
-size_t LoadStringSafe(HINSTANCE hInst, UINT sid, const wchar_t**outstr, WORD lang = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL)) {
-	*outstr = nullptr;
-
-	HRSRC hResInfo = FindResourceEx(hInst, RT_STRING, MAKEINTRESOURCE(sid / 16 + 1), lang);
-	if (!hResInfo) return 0;
-	HGLOBAL hGlobal = LoadResource(hInst, hResInfo);
-	if (!hGlobal) return 0;
-	wchar_t* str = (wchar_t*)LockResource(hGlobal);
-	if (!str) return 0;
-
-	// Seek to our string
-	for (unsigned i = 0; i<sid % 16; i++) {
-		str += 1 + (WORD)*str;
+WORD DialogData::LoadStringSafe(HINSTANCE hinst, UINT uId, const wchar_t **outstr, WORD langId) {
+	wchar_t* pwsz = nullptr;
+	HRSRC hrsrc = FindResourceEx(hinst, RT_STRING, MAKEINTRESOURCE(uId / 16 + 1), langId);
+	if (hrsrc) {
+		HGLOBAL hglob = LoadResource(hinst, hrsrc);
+		if (hglob) {
+			pwsz = reinterpret_cast<wchar_t*>( LockResource(hglob) );
+			if (pwsz) {
+				// Seek to our string
+				for (unsigned i = 0; i < uId % 16; i++) {
+					pwsz += 1 + (WORD)*pwsz;
+				}
+			}
+		}
 	}
+	
+	*outstr = pwsz;
+	if (!pwsz)
+		return 0;
 
-	WORD len = (WORD)*str;
-	*outstr = ++str;
-	return len;
+	++*outstr; // now we know that this is not nullptr, we can increment it
+	return (WORD)*pwsz;
 }
 
 wchar_t* DialogData::GetResourceString(UINT sid) {
 	const wchar_t *str;
-	int len = LoadStringSafe(hInstance, sid, &str);
+	size_t len = LoadStringSafe(hInstance, sid, &str);
 	if (!len) {
 		DebugBreak();
 		return new wchar_t();
