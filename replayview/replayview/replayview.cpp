@@ -23,6 +23,7 @@ bool checkMagic(const uint8_t* buf) {
 		// kishinjou (ddc) - has the same id as th13 for some reason
 		TO_MAGIC( 't', '1', '4', '3' ), // danmaku amanojaku (isc)
 		TO_MAGIC( 't', '1', '5', 'r' ), // kanjuden (lolk)
+		TO_MAGIC( 't', '1', '6', 'r' ), // tenkuushou (hsifs)
 	};
 	for (int i = 0; i < ARRAY_SIZE(magic); i++) {
 		if (magic[i] == *(uint32_t*)buf) {
