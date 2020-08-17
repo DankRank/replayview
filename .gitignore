@@ -4,7 +4,7 @@
 *.aps
 *.user
 Debug
-Release
+Release*
 *.ncb
 *.opt
 *.plg
