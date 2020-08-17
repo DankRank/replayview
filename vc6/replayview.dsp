@@ -92,7 +92,7 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\replayview\replayview\replayview.c
+SOURCE=..\replayview.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -100,7 +100,7 @@ SOURCE=..\replayview\replayview\replayview.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\replayview\replayview\resource.h
+SOURCE=..\resource.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
@@ -108,17 +108,17 @@ SOURCE=..\replayview\replayview\resource.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=..\replayview\replayview\English.rc
+SOURCE=..\English.rc
 # PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
-SOURCE=..\replayview\replayview\Japanese.rc
+SOURCE=..\Japanese.rc
 # PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
-SOURCE=..\replayview\replayview\resource.rc
+SOURCE=..\resource.rc
 # End Source File
 # End Group
 # End Target
